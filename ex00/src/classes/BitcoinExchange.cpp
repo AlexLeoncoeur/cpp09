@@ -18,7 +18,7 @@ static std::string	*trim(const std::string &line, char c)
 	size_t	pos;
 	size_t	lastPos;
 
-	for (int i = 0; i < line.size(); i++)
+	for (int i = 0; i <= line.size(); i++)
 	{
 		if (line[i] != c)
 		{
@@ -26,7 +26,7 @@ static std::string	*trim(const std::string &line, char c)
 			break ;
 		}
 	}
-	for (int i = line.size(); i > 0; i--)
+	for (int i = line.size() - 1; i >= 0; i--)
 	{
 		if (line[i] != c)
 		{
@@ -35,7 +35,7 @@ static std::string	*trim(const std::string &line, char c)
 		}
 	}
 	std::string	*trimLine = new std::string;
-	*trimLine = line.substr(pos, lastPos);
+	*trimLine = line.substr(pos, lastPos + 1);
 	return (trimLine);
 }
 
@@ -50,7 +50,7 @@ static std::string	**split(const std::string &line, char separator)
 		delete[] splitedLine;
 		return (NULL);
 	}
-	splitedLine[0] = trim(line.substr(0, pos - 1), ' ');
+	splitedLine[0] = trim(line.substr(0, pos), ' ');
 	splitedLine[1] = trim(line.substr(pos + 1, line.size()), ' ');
 	return (splitedLine);
 }
@@ -260,10 +260,14 @@ void	BitcoinExchange::execute()
 		std::cerr << GREEN << "." << inputIt->first << "." << RESET << std::endl;
 		if (!checkDate(inputIt))
 			continue ;
+		std::cerr << BLUE << "." << inputIt->second << "." << RESET << std::endl;
 		if (!checkValue(inputIt))
 			continue ;
 		for (; baseIt != this->_dataBase.end(); baseIt++)
 		{
+			std::cerr << MAGENTA << "." << baseIt->first << " " << inputIt->first << "." << RESET << std::endl;
+			std::cerr << YELLOW << "." << (baseIt->first.compare(inputIt->first)) << "." << RESET << std::endl;
+			//baseIt->first.compare(inputIt->first);
 			if (baseIt->first <= inputIt->first)
 				closestDate = baseIt;
 		}
