@@ -1,107 +1,13 @@
-#include "../include/MutantStack.hpp"
+#include "../include/BitcoinExchange.hpp"
 #include <string>
 #include <iostream>
 #include <list>
 
-int main()
+int main(int argc, char **argv)
 {
-	{
-		std::cout << "----Test 1----" << std::endl;
-
-		MutantStack<int> mstack;
-
-		mstack.push(5);
-		mstack.push(17);
-
-		std::cout << mstack.top() << std::endl;
-
-		mstack.pop();
-
-		std::cout << mstack.size() << std::endl;
-
-		mstack.push(3);
-		mstack.push(5);
-		mstack.push(737);
-		mstack.push(0);
-
-		MutantStack<int>::iterator it = mstack.begin();
-		MutantStack<int>::iterator ite = mstack.end();
-
-		++it;
-		--it;
-
-		while (it != ite)
-		{
-			std::cout << *it << std::endl;
-			++it;
-		}
-		
-		std::stack<int> s(mstack);
-	}
-	{
-		std::cout << "----Test 2----" << std::endl;
-
-		MutantStack<int> mstack;
-
-		std::cout << mstack.size() << std::endl;
-		MutantStack<int>::iterator it = mstack.begin();
-		mstack.push(5);
-		mstack.push(17);
-
-		std::cout << mstack.top() << std::endl;
-
-		mstack.pop();
-
-		std::cout << mstack.size() << std::endl;
-
-		mstack.push(3);
-		mstack.push(5);
-		mstack.push(737);
-		mstack.push(0);
-
-		MutantStack<int>::iterator ite = mstack.end();
-
-		++it;
-		--it;
-
-		while (it != ite)
-		{
-			std::cout << *it << std::endl;
-			++it;
-		}
-		
-		std::stack<int> s(mstack);
-	}
-	{
-		std::cout << "----Test 3----" << std::endl;
-
-		std::list<int> mstack;
-
-		mstack.push_back(5);
-		mstack.push_back(17);
-
-		std::cout << mstack.back() << std::endl;
-
-		mstack.pop_back();
-
-		std::cout << mstack.size() << std::endl;
-
-		mstack.push_back(3);
-		mstack.push_back(5);
-		mstack.push_back(737);
-		mstack.push_back(0);
-
-		std::list<int>::iterator it = mstack.begin();
-		std::list<int>::iterator ite = mstack.end();
-
-		++it;
-		--it;
-
-		while (it != ite)
-		{
-			std::cout << *it << std::endl;
-			++it;
-		}
-	}
-	return 0;
+	if (argc != 2)
+		return (std::cerr << RED << "Error: bad number of arguments." << RESET << std::endl, 1);
+	BitcoinExchange	exchange(argv[1]);
+	exchange.execute();
+	return (0);
 }
