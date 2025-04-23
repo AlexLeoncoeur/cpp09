@@ -11,10 +11,10 @@ class BitcoinExchange
 
 private:
 
-	std::map<std::string, int>	_dataBase = addDataBase("../../data.csv");
-	std::map<std::string, int>	_inputData;
+	std::map<std::string, std::string>	_inputData;
+	std::map<std::string, int>			_dataBase = addDataBase("../../data.csv");
 
-	std::map<std::string, int>	addDataBase(std::string dataBaseRoute);
+	std::map<std::string, int>			addDataBase(std::string dataBaseRoute);
 
 public:
 
@@ -47,6 +47,7 @@ public:
 	};
 };
 
-void	determineSeparator(const std::string &, char &);
-char	**split(const std::string &, char);
-std::map<std::string, int> &fileToMap(const std::ifstream &input);
+void								determineSeparator(const std::string &, char &);
+std::string							**split(const std::string &, char);
+std::string							trim(const std::string &, char);
+std::map<std::string, std::string>	&fileToMap(std::ifstream &input);
