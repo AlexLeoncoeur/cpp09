@@ -3,10 +3,10 @@
 # include <stack>
 
 /* 
-std::map: 		Sorted associative container with unique keys.												used: x		suggestion: ex00: map{{date, value}}, find value using date and multiply by amount
+std::map:		Sorted associative container with unique keys.												used: x		suggestion: ex00: map{{date, value}}, find value using date and multiply by amount
 std::vector:	Dynamic array with random access.															used: x		suggestion: ex01: Only need is to iterate an array
-std::list: 		Doubly-linked list with efficient insertions and deletions.									used: x		suggestion: ex02: Insertions and deletion are key to do this exercice
-std::deque: 	Double-ended queue with efficient insertions and deletions at both ends and random access	used: x		suggestion: ex02: Insertions and deletion are key to do this exercice
+std::list:		Doubly-linked list with efficient insertions and deletions.									used: x		suggestion: ex02: Insertions and deletion are key to do this exercice
+std::deque:		Double-ended queue with efficient insertions and deletions at both ends and random access	used: x		suggestion: ex02: Insertions and deletion are key to do this exercice
 
 
 9 8 4 1 7 20 13 2 3
