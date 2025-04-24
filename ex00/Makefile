@@ -54,7 +54,7 @@ $(NAME): compiling $(CPP_OFILES) $(CLASS_OFILES)
 debug: all
 	@ echo
 	@ echo "$(RED)DEBUG MODE ACTIVATED!$(RESET)"
-	@ valgrind -s ./$(NAME)
+	@ valgrind -s ./$(NAME) input.txt
 
 libft:
 	@ make --silent -C include/libft/ bonus

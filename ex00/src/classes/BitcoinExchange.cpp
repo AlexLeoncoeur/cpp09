@@ -41,18 +41,45 @@ static std::string	*trim(const std::string &line, char c)
 
 static std::string	**split(const std::string &line, char separator)
 {
-	size_t	pos;
-	std::string **splitedLine = new std::string*[2];
+	int			separators = 1;
+	size_t		pos = 0;
 
 	pos = line.find(separator);
 	if (pos == std::string::npos)
+		return (NULL);
+	while (pos == std::string::npos)
 	{
-		delete[] splitedLine;
+		pos = line.find(separator, pos + 1);
+		separators++;
+	}
+	switch (separators + 1)
+	{
+	case 2:
+	{
+		std::string **splitedLine = new std::string*[2];
+		splitedLine[0] = trim(line.substr(0, pos), ' ');
+		splitedLine[1] = trim(line.substr(pos + 1, line.size()), ' ');
+		return (splitedLine);
+	}
+	case 3:
+	{
+		std::string **splitedLine = new std::string*[3];
+		splitedLine[0] = trim(line.substr(0, pos), ' ');
+		splitedLine[1] = trim(line.substr(pos + 1, line.find(separator, pos + 1)), ' ');
+		splitedLine[2] = trim(line.substr(line.find(separator, pos + 1) + 1, line.size()), ' ');
+		return (splitedLine);
+	}
+	default:
 		return (NULL);
 	}
-	splitedLine[0] = trim(line.substr(0, pos), ' ');
-	splitedLine[1] = trim(line.substr(pos + 1, line.size()), ' ');
-	return (splitedLine);
+}
+
+static int	splitSize(std::string **splitedString)
+{
+	int i = 0;
+	while (splitedString[i]) 
+		i++;
+	return (i);
 }
 
 static std::map<std::string, std::string> fileToMap(std::ifstream &input)
@@ -80,14 +107,12 @@ static std::map<std::string, std::string> fileToMap(std::ifstream &input)
 			continue ;
 		}
 		splitedLine = split(readLine, separator);
-		if (!splitedLine)
-		{
+		if (!splitedLine || splitSize(splitedLine) > 2)
 			data.insert(std::make_pair(readLine, ""));
-			continue ;
-		}
-		data.insert(std::make_pair(*splitedLine[0], *splitedLine[1]));
-		delete splitedLine[0];
-		delete splitedLine[1];
+		else
+			data.insert(std::make_pair(*splitedLine[0], *splitedLine[1]));
+		for (int i = 0; splitedLine && splitedLine[i]; i++)
+			delete splitedLine[i];
 		delete[] splitedLine;
 	}
 	return (data);
@@ -120,7 +145,7 @@ static void valueIsValid(const std::string input)
 
 static void DateIsValid(const std::string input)
 {
-	if (input.size() != 10)
+	if (!input || input.size() != 10)
 		throw BitcoinExchange::dataError(INVALIDDATE);
 	for (int i = 0; i < input.size(); i++)
 	{
@@ -138,6 +163,7 @@ static void DateIsValid(const std::string input)
 		if (i == 9 && ((input[i] != '0' && input[i] != '1') && input[i - 1] == '3'))
 			throw BitcoinExchange::dataError(INVALIDDATE);
 	}
+	std::cerr << CYAN << input << RESET << std::endl;
 }
 
 static bool	checkDate(std::map<std::string, std::string>::iterator it)
@@ -248,6 +274,45 @@ std::map<std::string, std::string>	BitcoinExchange::addDataBase(std::string data
 	return (aux);
 }
 
+static int	compareDates(std::string input, std::string base)
+{
+	std::string	**dividedDate;
+	int			year;
+	int			month;
+	int			day;
+	int			diff;
+
+	/* input 2020-05-14 base 2019-12-31 */
+	/* input 1-7-17 base 2019-12-31 */
+	/* input 365-210-17 base 2019-12-31 */
+	/* input 138 base 2019-12-31 */
+	/* input 2020-12-31 base 2021-01-01 */
+	/* input -1 11 30 base 2021-01-01 */
+	/* input -365 330 30 base 2021-01-01 */
+	/* input 2021-01-01 base 2020-12-31 */
+	/* input 1 -11 -30 base 2021-01-01 */
+	/* input 365 -330 -30 base 2021-01-01 */
+	/* input 2021-01-01 base 2020-12-31 */
+	/* input 1 -11 -30 base 2021-01-01 */
+	/* input 365 -330 -30 base 2021-01-01 */
+	/* si es negativo nos hemos pasado y ya no es fecha valida */
+	dividedDate = split(input, '-');
+	year = std::atoi(dividedDate[0]->c_str());
+	month = std::atoi(dividedDate[1]->c_str());
+	std::cerr << WHITE << "." << **dividedDate << "." << RESET << std::endl;
+	day = std::atoi(dividedDate[2]->c_str());
+	delete[] dividedDate;
+
+	dividedDate = split(base, '-');
+	year = year - std::atoi(dividedDate[0]->c_str());
+	month = month - std::atoi(dividedDate[1]->c_str());
+	day = day - std::atoi(dividedDate[2]->c_str());
+	delete[] dividedDate;
+
+	diff = year + month + day;
+	return (diff);
+}
+
 void	BitcoinExchange::execute()
 {
 	std::map<std::string, std::string>::iterator	inputIt = this->_inputData.begin();
@@ -266,12 +331,11 @@ void	BitcoinExchange::execute()
 		for (; baseIt != this->_dataBase.end(); baseIt++)
 		{
 			std::cerr << MAGENTA << "." << baseIt->first << " " << inputIt->first << "." << RESET << std::endl;
-			std::cerr << YELLOW << "." << (baseIt->first.compare(inputIt->first)) << "." << RESET << std::endl;
-			//baseIt->first.compare(inputIt->first);
-			if (baseIt->first <= inputIt->first)
+			std::cerr << YELLOW << "." << (compareDates(inputIt->first, baseIt->first)) << "." << RESET << std::endl;
+			if (compareDates(inputIt->first, baseIt->first) >= 0 && compareDates(baseIt->first, closestDate->first) < 0)
 				closestDate = baseIt;
 		}
-		res = std::atof(inputIt->second.c_str()) * std::atof(baseIt->second.c_str());
+		res = std::atof(inputIt->second.c_str()) * std::atof(closestDate->second.c_str());
 		std::cout << GREEN << inputIt->first << " => " << inputIt->second << " = " << res << RESET << std::endl;
 	}
 }
