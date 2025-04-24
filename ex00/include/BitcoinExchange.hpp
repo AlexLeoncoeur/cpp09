@@ -22,10 +22,10 @@ class BitcoinExchange
 
 private:
 
-	std::map<std::string, std::string>	_inputData;
-	std::map<std::string, std::string>	_dataBase;
+	std::multimap<std::string, std::string>	_inputData;
+	std::multimap<std::string, std::string>	_dataBase;
 
-	std::map<std::string, std::string>	addDataBase(std::string dataBaseRoute);
+	std::multimap<std::string, std::string>	addDataBase(std::string dataBaseRoute);
 
 public:
 
@@ -72,22 +72,22 @@ public:
 				switch (error)
 				{
 				case (BIGNUMBER):
-					return ("Error: number greater than 1000.");
+					return ("Error: number greater than 1000 => ");
 					break;
 				case (SMALLNUMBER):
-					return ("Error: not a positive number.");
+					return ("Error: not a positive number => ");
 					break;
 				case (NOTNUMBER):
-					return ("Error: not a number.");
+					return ("Error: not a number => ");
 					break;
 				case (DECIMALS):
-					return ("Error: number greater than float.");
+					return ("Error: number greater than float => ");
 					break;
 				case (INVALIDDATE):
 					return ("Error: bad input => ");
 					break;				
 				default:
-					return ("Error: unspecified error.");
+					return ("Error: unspecified error => ");
 					break;
 				}
 			}

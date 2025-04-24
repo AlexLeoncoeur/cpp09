@@ -35,38 +35,42 @@ static std::string	*trim(const std::string &line, char c)
 		}
 	}
 	std::string	*trimLine = new std::string;
+	
 	*trimLine = line.substr(pos, lastPos + 1);
 	return (trimLine);
 }
 
 static std::string	**split(const std::string &line, char separator)
 {
-	int			separators = 1;
+	int			separators = 0;
 	size_t		pos = 0;
 
 	pos = line.find(separator);
 	if (pos == std::string::npos)
 		return (NULL);
-	while (pos == std::string::npos)
+	while (pos != std::string::npos)
 	{
 		pos = line.find(separator, pos + 1);
 		separators++;
 	}
+	pos = line.find(separator);
 	switch (separators + 1)
 	{
 	case 2:
 	{
-		std::string **splitedLine = new std::string*[2];
+		std::string **splitedLine = new std::string*[3];
 		splitedLine[0] = trim(line.substr(0, pos), ' ');
 		splitedLine[1] = trim(line.substr(pos + 1, line.size()), ' ');
+		splitedLine[2] = nullptr;
 		return (splitedLine);
 	}
 	case 3:
 	{
-		std::string **splitedLine = new std::string*[3];
+		std::string **splitedLine = new std::string*[4];
 		splitedLine[0] = trim(line.substr(0, pos), ' ');
 		splitedLine[1] = trim(line.substr(pos + 1, line.find(separator, pos + 1)), ' ');
 		splitedLine[2] = trim(line.substr(line.find(separator, pos + 1) + 1, line.size()), ' ');
+		splitedLine[3] = nullptr;
 		return (splitedLine);
 	}
 	default:
@@ -77,14 +81,15 @@ static std::string	**split(const std::string &line, char separator)
 static int	splitSize(std::string **splitedString)
 {
 	int i = 0;
-	while (splitedString[i]) 
+
+	while (splitedString[i] != nullptr) 
 		i++;
 	return (i);
 }
 
-static std::map<std::string, std::string> fileToMap(std::ifstream &input)
+static std::multimap<std::string, std::string> fileToMultimap(std::ifstream &input)
 {
-	std::map<std::string, std::string>	data;
+	std::multimap<std::string, std::string>	data;
 	std::string							readLine;
 	std::string							**splitedLine;
 	bool								firstLine = true;
@@ -111,7 +116,7 @@ static std::map<std::string, std::string> fileToMap(std::ifstream &input)
 			data.insert(std::make_pair(readLine, ""));
 		else
 			data.insert(std::make_pair(*splitedLine[0], *splitedLine[1]));
-		for (int i = 0; splitedLine && splitedLine[i]; i++)
+		for (int i = 0; splitedLine && splitedLine[i] != nullptr; i++)
 			delete splitedLine[i];
 		delete[] splitedLine;
 	}
@@ -126,6 +131,8 @@ static void valueIsValid(const std::string input)
 	{
 		if (i == 0 && (input[i] == '+'))
 			continue ;
+		if (i == 0 && (input[i] == '-'))
+			throw BitcoinExchange::dataError(SMALLNUMBER);
 		if (!std::isdigit(input[i]) && input[i] != '.')
 			throw BitcoinExchange::dataError(NOTNUMBER);
 		if (input[i] == '.')
@@ -135,9 +142,9 @@ static void valueIsValid(const std::string input)
 			doutCount++;
 		}
 	}
-	if (std::atoi(input.c_str()) > 1000)
+	if (std::atof(input.c_str()) > 1000)
 		throw BitcoinExchange::dataError(BIGNUMBER);
-	if (std::atoi(input.c_str()) < 0)
+	if (std::atof(input.c_str()) < 0)
 		throw BitcoinExchange::dataError(SMALLNUMBER);
 	if (std::atof(input.c_str()) > std::numeric_limits<float>::max())
 		throw BitcoinExchange::dataError(DECIMALS);
@@ -145,7 +152,7 @@ static void valueIsValid(const std::string input)
 
 static void DateIsValid(const std::string input)
 {
-	if (!input || input.size() != 10)
+	if (input.empty() || input.size() != 10)
 		throw BitcoinExchange::dataError(INVALIDDATE);
 	for (int i = 0; i < input.size(); i++)
 	{
@@ -163,10 +170,9 @@ static void DateIsValid(const std::string input)
 		if (i == 9 && ((input[i] != '0' && input[i] != '1') && input[i - 1] == '3'))
 			throw BitcoinExchange::dataError(INVALIDDATE);
 	}
-	std::cerr << CYAN << input << RESET << std::endl;
 }
 
-static bool	checkDate(std::map<std::string, std::string>::iterator it)
+static bool	checkDate(std::multimap<std::string, std::string>::iterator it)
 {
 	try
 	{
@@ -180,7 +186,7 @@ static bool	checkDate(std::map<std::string, std::string>::iterator it)
 	return (true);
 }
 
-static bool	checkValue(std::map<std::string, std::string>::iterator it)
+static bool	checkValue(std::multimap<std::string, std::string>::iterator it)
 {
 	try
 	{
@@ -188,7 +194,7 @@ static bool	checkValue(std::map<std::string, std::string>::iterator it)
 	}
 	catch (std::exception &e)
 	{
-		std::cerr << RED << e.what() << RESET << std::endl;
+		std::cerr << RED << e.what() << it->second << RESET << std::endl;
 		return (false);
 	}
 	return (true);
@@ -253,15 +259,15 @@ BitcoinExchange &BitcoinExchange::operator=(const BitcoinExchange &rhs)
 	return (*this);
 }
 
-std::map<std::string, std::string>	BitcoinExchange::addDataBase(std::string dataBaseRoute)
+std::multimap<std::string, std::string>	BitcoinExchange::addDataBase(std::string dataBaseRoute)
 {
 	std::ifstream									input(dataBaseRoute.c_str());
-	std::map<std::string, std::string>				aux;
-	//std::map<std::string, std::string>::iterator	it;
+	std::multimap<std::string, std::string>				aux;
+	//std::multimap<std::string, std::string>::iterator	it;
 
 	if (!input.is_open())
 		throw invalidInput();
-	aux = fileToMap(input);
+	aux = fileToMultimap(input);
 	/* it = aux.begin();
 	for (; it != aux.end(); it++)
 	{
@@ -299,41 +305,52 @@ static int	compareDates(std::string input, std::string base)
 	dividedDate = split(input, '-');
 	year = std::atoi(dividedDate[0]->c_str());
 	month = std::atoi(dividedDate[1]->c_str());
-	std::cerr << WHITE << "." << **dividedDate << "." << RESET << std::endl;
 	day = std::atoi(dividedDate[2]->c_str());
+	for (int i = 0; dividedDate[i] != nullptr; i++)
+		delete dividedDate[i];
 	delete[] dividedDate;
 
 	dividedDate = split(base, '-');
 	year = year - std::atoi(dividedDate[0]->c_str());
 	month = month - std::atoi(dividedDate[1]->c_str());
 	day = day - std::atoi(dividedDate[2]->c_str());
+	for (int i = 0; dividedDate[i] != nullptr; i++)
+		delete dividedDate[i];
 	delete[] dividedDate;
 
-	diff = year + month + day;
+	diff = (year * 365) + (month * 30) + day;
 	return (diff);
 }
 
 void	BitcoinExchange::execute()
 {
-	std::map<std::string, std::string>::iterator	inputIt = this->_inputData.begin();
-	std::map<std::string, std::string>::iterator	baseIt = this->_dataBase.begin();
-	std::map<std::string, std::string>::iterator	closestDate = this->_dataBase.begin();
-	float											res;
+	std::multimap<std::string, std::string>::iterator	inputIt = this->_inputData.begin();
+	double												res;
 
 	for (; inputIt != this->_inputData.end(); inputIt++)
 	{
-		std::cerr << GREEN << "." << inputIt->first << "." << RESET << std::endl;
 		if (!checkDate(inputIt))
 			continue ;
-		std::cerr << BLUE << "." << inputIt->second << "." << RESET << std::endl;
 		if (!checkValue(inputIt))
 			continue ;
+
+		std::multimap<std::string, std::string>::iterator	baseIt = this->_dataBase.begin();
+		std::multimap<std::string, std::string>::iterator	closestDate = this->_dataBase.begin();
+
 		for (; baseIt != this->_dataBase.end(); baseIt++)
 		{
-			std::cerr << MAGENTA << "." << baseIt->first << " " << inputIt->first << "." << RESET << std::endl;
-			std::cerr << YELLOW << "." << (compareDates(inputIt->first, baseIt->first)) << "." << RESET << std::endl;
-			if (compareDates(inputIt->first, baseIt->first) >= 0 && compareDates(baseIt->first, closestDate->first) < 0)
+			int fCompare = compareDates(inputIt->first, baseIt->first);
+			int sCompare = compareDates(closestDate->first, baseIt->first);
+
+			if (fCompare >= 0 && sCompare <= 0)
+			{
 				closestDate = baseIt;
+				if (fCompare < 0 && sCompare < 0)
+				break ;
+				/* std::cout << BLUE << inputIt->first << RESET << std::endl;	
+				std::cout << YELLOW << "compareDates("<< inputIt->first << ", "<< baseIt->first << ")" << " => " << "compareDates("<< closestDate->first << ", "<< baseIt->first << ")" << RESET << std::endl;	
+				std::cout << WHITE << compareDates(inputIt->first, baseIt->first) << " => " << compareDates(closestDate->first, baseIt->first) << RESET << std::endl; */	
+			}	
 		}
 		res = std::atof(inputIt->second.c_str()) * std::atof(closestDate->second.c_str());
 		std::cout << GREEN << inputIt->first << " => " << inputIt->second << " = " << res << RESET << std::endl;
@@ -346,5 +363,5 @@ void	BitcoinExchange::addInput(const std::string inputRoute)
 
 	if (!input.is_open())
 		throw invalidInput();
-	this->_inputData = fileToMap(input);
+	this->_inputData = fileToMultimap(input);
 }
