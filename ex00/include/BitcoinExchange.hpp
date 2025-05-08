@@ -4,6 +4,7 @@
 # include <string>
 # include <fstream>
 # include <iostream>
+# include <sstream>
 # include <limits>
 # include "colors.hpp"
 
@@ -14,6 +15,7 @@ enum errorType
 	NOTNUMBER,
 	DECIMALS,
 	INVALIDDATE,
+	DELIMITER,
 	VALID,
 };
 
@@ -22,7 +24,7 @@ class BitcoinExchange
 
 private:
 
-	std::multimap<std::string, std::string>	_inputData;
+	std::string								_inputFile;
 	std::multimap<std::string, std::string>	_dataBase;
 
 	std::multimap<std::string, std::string>	addDataBase(std::string dataBaseRoute);
@@ -36,8 +38,8 @@ public:
 
 	BitcoinExchange &operator=(const BitcoinExchange &);
 
-	void	addInput(const std::string);
 	void	execute();
+	void	BitcoinExchange::outputResult(std::string);
 
 	class invalidInput : public std::exception
 	{
@@ -85,6 +87,9 @@ public:
 					break;
 				case (INVALIDDATE):
 					return ("Error: bad input => ");
+					break;
+				case (DELIMITER):
+					return ("Error: bad delimeter => ");
 					break;				
 				default:
 					return ("Error: unspecified error => ");

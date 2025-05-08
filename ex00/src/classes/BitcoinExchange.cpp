@@ -1,18 +1,5 @@
 #include "../../include/BitcoinExchange.hpp"
 
-static void	determineSeparator(const std::string &line, char &separator)
-{
-	std::string		commonSeparator = ",;|";
-
-	for (int i = 0; i < commonSeparator.size(); i++)
-		if (line.find(commonSeparator[i]) != std::string::npos)
-		{
-			separator = commonSeparator[i];
-			return ;
-		}
-	throw BitcoinExchange::noSeparator();
-}
-
 static std::string	*trim(const std::string &line, char c)
 {
 	size_t	pos;
@@ -150,7 +137,7 @@ static void valueIsValid(const std::string input)
 		throw BitcoinExchange::dataError(DECIMALS);
 }
 
-static void DateIsValid(const std::string input)
+static void dateIsValid(const std::string input)
 {
 	if (input.empty() || input.size() != 10)
 		throw BitcoinExchange::dataError(INVALIDDATE);
@@ -172,7 +159,7 @@ static void DateIsValid(const std::string input)
 	}
 }
 
-static bool	checkDate(std::multimap<std::string, std::string>::iterator it)
+/* static bool	checkDate(std::multimap<std::string, std::string>::iterator it)
 {
 	try
 	{
@@ -198,9 +185,9 @@ static bool	checkValue(std::multimap<std::string, std::string>::iterator it)
 		return (false);
 	}
 	return (true);
-}
+} */
 
-BitcoinExchange::BitcoinExchange() : _inputData()
+BitcoinExchange::BitcoinExchange() : _inputFile()
 {
 	try
 	{
@@ -221,7 +208,7 @@ BitcoinExchange::BitcoinExchange(const BitcoinExchange &toCopy)
 	return ;
 }
 
-BitcoinExchange::BitcoinExchange(const std::string inputRoute) : _inputData()
+BitcoinExchange::BitcoinExchange(const std::string inputRoute) : _inputFile(inputRoute)
 {
 	try
 	{
@@ -231,15 +218,6 @@ BitcoinExchange::BitcoinExchange(const std::string inputRoute) : _inputData()
 	{
 		std::cerr << RED << e.what() << RESET << std::endl;
 		exit (1);
-	}
-	try
-	{
-		this->addInput(inputRoute);
-	}
-	catch (std::exception &e)
-	{
-		std::cerr << RED << e.what() << RESET << std::endl;
-		exit(1);
 	}
 	return ;
 }
@@ -254,7 +232,7 @@ BitcoinExchange &BitcoinExchange::operator=(const BitcoinExchange &rhs)
 	if (this != &rhs)
 	{
 		this->_dataBase = rhs._dataBase;
-		this->_inputData = rhs._inputData;
+		this->_inputFile = rhs._inputFile;
 	}
 	return (*this);
 }
@@ -288,20 +266,6 @@ static int	compareDates(std::string input, std::string base)
 	int			day;
 	int			diff;
 
-	/* input 2020-05-14 base 2019-12-31 */
-	/* input 1-7-17 base 2019-12-31 */
-	/* input 365-210-17 base 2019-12-31 */
-	/* input 138 base 2019-12-31 */
-	/* input 2020-12-31 base 2021-01-01 */
-	/* input -1 11 30 base 2021-01-01 */
-	/* input -365 330 30 base 2021-01-01 */
-	/* input 2021-01-01 base 2020-12-31 */
-	/* input 1 -11 -30 base 2021-01-01 */
-	/* input 365 -330 -30 base 2021-01-01 */
-	/* input 2021-01-01 base 2020-12-31 */
-	/* input 1 -11 -30 base 2021-01-01 */
-	/* input 365 -330 -30 base 2021-01-01 */
-	/* si es negativo nos hemos pasado y ya no es fecha valida */
 	dividedDate = split(input, '-');
 	year = std::atoi(dividedDate[0]->c_str());
 	month = std::atoi(dividedDate[1]->c_str());
@@ -322,46 +286,80 @@ static int	compareDates(std::string input, std::string base)
 	return (diff);
 }
 
-void	BitcoinExchange::execute()
+void	BitcoinExchange::outputResult(std::string line)
 {
-	std::multimap<std::string, std::string>::iterator	inputIt = this->_inputData.begin();
-	double												res;
+	std::istringstream					convertedLine(line);
+	std::string							date, value;
+	char								delimiter;
+	double								res;
 
-	for (; inputIt != this->_inputData.end(); inputIt++)
+	std::multimap<std::string, std::string>::iterator	baseIt = this->_dataBase.begin();
+	std::multimap<std::string, std::string>::iterator	closestDate = this->_dataBase.begin();
+
+	convertedLine >> std::ws >> date >> std::ws >> delimiter >> std::ws >> value;
+	for (; baseIt != this->_dataBase.end(); baseIt++)
 	{
-		if (!checkDate(inputIt))
-			continue ;
-		if (!checkValue(inputIt))
-			continue ;
+		int fCompare = compareDates(date, baseIt->first);
+		int sCompare = compareDates(closestDate->first, baseIt->first);
 
-		std::multimap<std::string, std::string>::iterator	baseIt = this->_dataBase.begin();
-		std::multimap<std::string, std::string>::iterator	closestDate = this->_dataBase.begin();
-
-		for (; baseIt != this->_dataBase.end(); baseIt++)
+		if (fCompare >= 0 && sCompare <= 0)
 		{
-			int fCompare = compareDates(inputIt->first, baseIt->first);
-			int sCompare = compareDates(closestDate->first, baseIt->first);
+			closestDate = baseIt;
+			if (fCompare < 0 && sCompare < 0)
+			break ;
+			/* std::cout << BLUE << inputIt->first << RESET << std::endl;	
+			std::cout << YELLOW << "compareDates("<< inputIt->first << ", "<< baseIt->first << ")" << " => " << "compareDates("<< closestDate->first << ", "<< baseIt->first << ")" << RESET << std::endl;	
+			std::cout << WHITE << compareDates(inputIt->first, baseIt->first) << " => " << compareDates(closestDate->first, baseIt->first) << RESET << std::endl; */	
+		}	
+	}
+	res = std::atof(value.c_str()) * std::atof(closestDate->second.c_str());
+	std::cout << GREEN << date << " => " << value << " = " << res << RESET << std::endl;
+}
 
-			if (fCompare >= 0 && sCompare <= 0)
-			{
-				closestDate = baseIt;
-				if (fCompare < 0 && sCompare < 0)
-				break ;
-				/* std::cout << BLUE << inputIt->first << RESET << std::endl;	
-				std::cout << YELLOW << "compareDates("<< inputIt->first << ", "<< baseIt->first << ")" << " => " << "compareDates("<< closestDate->first << ", "<< baseIt->first << ")" << RESET << std::endl;	
-				std::cout << WHITE << compareDates(inputIt->first, baseIt->first) << " => " << compareDates(closestDate->first, baseIt->first) << RESET << std::endl; */	
-			}	
+static void	divideLine(std::string line)
+{
+	std::istringstream	convertedLine(line);
+	std::string			date, value;
+	char				delimiter;
+
+	if (convertedLine >> std::ws >> date >> std::ws >> delimiter >> std::ws >> value)
+	{
+		size_t	pos = line.find(delimiter);
+		if (isspace(line[pos + 2]) || isspace(line[pos - 2]) || !isspace(line[pos + 1]) || !isspace(line[pos - 1]))
+			throw BitcoinExchange::dataError(INVALIDDATE);
+		if (delimiter == '|' && convertedLine.eof() && line.find(date) == 0)
+		{
+			dateIsValid(date);
+			valueIsValid(value);
 		}
-		res = std::atof(inputIt->second.c_str()) * std::atof(closestDate->second.c_str());
-		std::cout << GREEN << inputIt->first << " => " << inputIt->second << " = " << res << RESET << std::endl;
 	}
 }
 
-void	BitcoinExchange::addInput(const std::string inputRoute)
+void	BitcoinExchange::execute()
 {
-	std::ifstream				input(inputRoute.c_str());
+	bool								firstLine = true;
+	std::string							readLine;
+	std::ifstream						input(this->_inputFile);
 
 	if (!input.is_open())
 		throw invalidInput();
-	this->_inputData = fileToMultimap(input);
+	while (std::getline(input, readLine))
+	{
+		try
+		{
+			divideLine(readLine);
+		}
+		catch (std::exception &e)
+		{
+			std::cerr << RED << e.what() << RESET << std::endl;
+			continue ;
+		}
+		outputResult(readLine);
+	}
 }
+
+
+
+/* 
+	addInput sobra, hay que borrar _inputData y al comenzar execute crear un bucle que checkea la fecha y compara hasta encontrar el valor correcto.
+*/
