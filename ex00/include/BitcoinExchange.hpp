@@ -24,10 +24,10 @@ class BitcoinExchange
 
 private:
 
-	std::string								_inputFile;
-	std::multimap<std::string, std::string>	_dataBase;
+	std::string							_inputFile;
+	std::multimap<std::string, float>	_dataBase;
 
-	std::multimap<std::string, std::string>	addDataBase(std::string dataBaseRoute);
+	std::multimap<std::string, float>	addDataBase(std::string dataBaseRoute);
 
 public:
 
@@ -39,7 +39,7 @@ public:
 	BitcoinExchange &operator=(const BitcoinExchange &);
 
 	void	execute();
-	void	BitcoinExchange::outputResult(std::string);
+	void	outputResult(std::string);
 
 	class invalidInput : public std::exception
 	{
