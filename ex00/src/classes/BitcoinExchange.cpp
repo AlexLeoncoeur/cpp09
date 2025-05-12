@@ -137,26 +137,49 @@ static void valueIsValid(const std::string input)
 		throw BitcoinExchange::dataError(DECIMALS);
 }
 
+static bool	isNum(std::string string)
+{
+	for (int i = 0; i < string.size(); i++)
+	{
+		if (!isdigit(string[i]))
+			return (false);
+	}
+	return (true);
+}
+
 static void dateIsValid(const std::string input)
 {
+	std::istringstream			date(input);
+	std::string					year, month, day;
+	int							iYear, iMonth, iDay;
+	char						delimiter = '-';
+	bool						isValidDate = false;
+
 	if (input.empty() || input.size() != 10)
 		throw BitcoinExchange::dataError(INVALIDDATE);
-	for (int i = 0; i < input.size(); i++)
+	if (!(date >> delimiter >> year >> delimiter >> month >> delimiter >> day))
+		throw BitcoinExchange::dataError(INVALIDDATE);
+	if (year.size() != 4 || month.size() != 2 || day.size() != 2)
+		throw BitcoinExchange::dataError(INVALIDDATE);
+	if (!isNum(year) || !isNum(month) || !isNum(day))
+		throw BitcoinExchange::dataError(INVALIDDATE);
+	iYear = atoi(year.c_str());
+	iMonth = atoi(month.c_str());
+	iDay = atoi(day.c_str());
+	switch(iMonth)
 	{
-		if ((i == 4 || i == 7) && input[i] == '-')
-			continue ;
-		if (!std::isdigit(input[i]))
-			throw BitcoinExchange::dataError(INVALIDDATE);
-		if ((i == 5) && (input[i] != '1' && input[i] != '0'))
-			throw BitcoinExchange::dataError(INVALIDDATE);
-		if ((i == 6) && (input[i - 1] == '1')
-			&& (input[i] != '2' && input[i] != '1' && input[i] != '0'))
-			throw BitcoinExchange::dataError(INVALIDDATE);
-		if (i == 8 && (input[i] != '0' && input[i] != '1' && input[i] != '2' && input[i] != '3'))
-			throw BitcoinExchange::dataError(INVALIDDATE);
-		if (i == 9 && ((input[i] != '0' && input[i] != '1') && input[i - 1] == '3'))
-			throw BitcoinExchange::dataError(INVALIDDATE);
+		case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+			isValidDate = (iDay >= 1 && iDay <= 31);
+			break ;
+		case 4: case 6: case 9: case 11:
+			isValidDate = (iDay >= 1 && iDay <= 30);
+			break ;
+		case 2:
+			isValidDate = (iYear % 4 == 0 && (iYear % 100 != 0 || iYear % 400 == 0) ? (iDay >= 1 && iDay <= 29) : (iDay >= 1 && iDay <= 28));
+			break ;
 	}
+	if (!isValidDate)
+		throw BitcoinExchange::dataError(INVALIDDATE);
 }
 
 /* static bool	checkDate(std::multimap<std::string, std::string>::iterator it)
@@ -258,7 +281,7 @@ std::multimap<std::string, std::string>	BitcoinExchange::addDataBase(std::string
 	return (aux);
 }
 
-static int	compareDates(std::string input, std::string base)
+static int	compareDates(std::string input, std::string base)//modificar
 {
 	std::string	**dividedDate;
 	int			year;
@@ -286,7 +309,7 @@ static int	compareDates(std::string input, std::string base)
 	return (diff);
 }
 
-void	BitcoinExchange::outputResult(std::string line)
+void	BitcoinExchange::outputResult(std::string line)//modificar
 {
 	std::istringstream					convertedLine(line);
 	std::string							date, value;
