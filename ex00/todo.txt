@@ -19,7 +19,7 @@ std::deque:		Double-ended queue with efficient insertions and deletions at both 
 
 {{1,4 8,9} {2,13 7,20}}			Dividir en parejas de parejas de parejas, lista con 2 listas con 2 listas cada una
 {{1,4 8,9} {2,13 7,20}}			Ordenar again
-  b,a b,a   b,a  b,a
+	b,a b,a   b,a  b,a
 
 {1, 4, 9, 13, 20}				Crear nueva secuencia con el b1 y los a
 {8, 2, 7, 3}					Crear nueva secuencia con los b restantes y el numero impar si hay
