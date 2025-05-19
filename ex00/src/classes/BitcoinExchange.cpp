@@ -91,15 +91,8 @@ static void dateIsValid(const std::string input)
 
 BitcoinExchange::BitcoinExchange() : _inputFile()
 {
-	try
-	{
-		this->_dataBase = addDataBase("data.csv");
-	}
-	catch (std::exception &e)
-	{
-		std::cerr << RED << e.what() << RESET << std::endl;
-		exit (1);
-	}
+
+	this->_dataBase = addDataBase("data.csv");
 	return ;
 }
 
@@ -112,15 +105,7 @@ BitcoinExchange::BitcoinExchange(const BitcoinExchange &toCopy)
 
 BitcoinExchange::BitcoinExchange(const std::string inputRoute) : _inputFile(inputRoute)
 {
-	try
-	{
-		this->_dataBase = addDataBase("data.csv");
-	}
-	catch (std::exception &e)
-	{
-		std::cerr << RED << e.what() << RESET << std::endl;
-		exit (1);
-	}
+	this->_dataBase = addDataBase("data.csv");
 	return ;
 }
 
@@ -187,8 +172,8 @@ static int	convertToDays(int year, int month)
 static int	compareDates(std::string input, std::string base)
 {
 	std::istringstream	fullDate(input);
-	int					iYear, iMonth, iDay;
-	int					bYear, bMonth, bDay;
+	int					iYear = 0, iMonth = 0, iDay = 0;
+	int					bYear = 0, bMonth = 0, bDay = 0;
 	char				delimiter;
 
 	fullDate >> iYear >> delimiter >> iMonth >> delimiter >> iDay;
