@@ -36,17 +36,19 @@ void	RPN::outputResult(void)
 
 static std::string	cleanWhiteSpace(std::string toClean)
 {
-	std::istringstream	str(toClean);
-	std::string			cleaned;
-	std::string			c;
+	static std::istringstream	str(toClean);
+	std::string					cleaned;
+	std::string					c;
 
-	while (str >> c)
+	if (str >> c)
 	{
-		if (c.size() != 1 || (!isdigit(c[0]) && c != "+" && c != "-" && c != "*" && c != "/"))
+		if ((c.size() == 1 && (isdigit(c[0]) || c == "+" || c == "-" || c == "*" || c == "/")) || (c.size() == 2 && c[0] == '-' && isdigit(c[1])))
+			cleaned += c;
+		else	
 			throw RPN::invalidInput();
-		cleaned += c;
+		return (cleaned);
 	}
-	return (cleaned);
+	return ("");
 }
 
 static void	makeOperation(std::vector<float> &operands, char symbol)
@@ -73,17 +75,19 @@ static void	makeOperation(std::vector<float> &operands, char symbol)
 
 void	RPN::doMath(void)
 {
-	std::string	parsedString;
+	std::string	nextTerm;
 
 	try
 	{
-		parsedString = cleanWhiteSpace(this->_input);
-		for (int i = 0; parsedString[i]; i++)
+		while (1)
 		{
-			if (isdigit(parsedString[i]))
-				this->_equation.push_back(parsedString[i] - 48);
-			if (!isdigit(parsedString[i]))
-				makeOperation(this->_equation, parsedString[i]);
+			nextTerm = cleanWhiteSpace(this->_input);
+			if (nextTerm.empty())
+				break ;
+			if (isdigit(nextTerm[0]) || (nextTerm[0] == '-' && isdigit(nextTerm[1])))
+				this->_equation.push_back(atof(nextTerm.c_str()));
+			else
+				makeOperation(this->_equation, nextTerm[0]);
 		}
 		if (this->_equation.size() > 1)
 			throw cannotOperate(OPERAND);
@@ -92,7 +96,7 @@ void	RPN::doMath(void)
 	}
 	catch (std::exception &e)
 	{
-		std::cout << RED << e.what() << RESET << std::endl;
+		std::cerr << RED << e.what() << RESET << std::endl;
 		return ;
 	}
 }
